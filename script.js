@@ -1,62 +1,64 @@
-// MOBILE NAVIGATION
+// Progressive enhancement: the page remains readable if JavaScript is unavailable.
+document.documentElement.classList.add("js-motion");
 
+// MOBILE NAVIGATION
 const menuToggle = document.querySelector(".menu-toggle");
 const navLinks = document.querySelector(".nav-links");
 
-menuToggle.addEventListener("click", () => {
+function closeMenu() {
+  if (!menuToggle || !navLinks) return;
+  navLinks.classList.remove("open");
+  menuToggle.setAttribute("aria-expanded", "false");
+}
 
-  navLinks.classList.toggle("open");
-
-});
-
-
-// CLOSE MENU WHEN A LINK IS CLICKED
-
-document.querySelectorAll(".nav-links a").forEach(link => {
-
-  link.addEventListener("click", () => {
-
-    navLinks.classList.remove("open");
-
+if (menuToggle && navLinks) {
+  menuToggle.addEventListener("click", () => {
+    const isOpen = navLinks.classList.toggle("open");
+    menuToggle.setAttribute("aria-expanded", String(isOpen));
   });
 
-});
+  navLinks.querySelectorAll("a").forEach((link) => {
+    link.addEventListener("click", closeMenu);
+  });
 
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeMenu();
+  });
 
-// SCROLL REVEAL ANIMATION
+  document.addEventListener("click", (event) => {
+    if (
+      navLinks.classList.contains("open") &&
+      !navLinks.contains(event.target) &&
+      !menuToggle.contains(event.target)
+    ) {
+      closeMenu();
+    }
+  });
+}
 
+// SCROLL REVEAL — gracefully fall back if IntersectionObserver is unavailable.
 const revealElements = document.querySelectorAll(".reveal");
 
-const observer = new IntersectionObserver(
-  entries => {
+if ("IntersectionObserver" in window) {
+  const observer = new IntersectionObserver(
+    (entries, currentObserver) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("visible");
+          currentObserver.unobserve(entry.target);
+        }
+      });
+    },
+    { threshold: 0.12 }
+  );
 
-    entries.forEach(entry => {
-
-      if (entry.isIntersecting) {
-
-        entry.target.classList.add("visible");
-
-        observer.unobserve(entry.target);
-
-      }
-
-    });
-
-  },
-  {
-    threshold: 0.12
-  }
-);
-
-
-revealElements.forEach(element => {
-
-  observer.observe(element);
-
-});
-
+  revealElements.forEach((element) => observer.observe(element));
+} else {
+  revealElements.forEach((element) => element.classList.add("visible"));
+}
 
 // CURRENT YEAR
-
-document.getElementById("year").textContent =
-  new Date().getFullYear();
+const yearElement = document.getElementById("year");
+if (yearElement) {
+  yearElement.textContent = new Date().getFullYear();
+}
